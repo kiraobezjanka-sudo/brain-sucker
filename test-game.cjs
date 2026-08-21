@@ -97,4 +97,14 @@ listeners.keydown({ key: "ц", code: "KeyW", preventDefault: noop });
 game.step();
 assert.deepEqual(game.getState().snake[0], { x: 7, y: 7 }, "physical W works with a Russian keyboard layout");
 
-console.log("OK: keyboard codes, WASD, arrows, food, growth, wraparound, self-collision, and direction rules");
+game.reset();
+game.start();
+const headBeforePause = game.getState().snake[0];
+listeners.keydown({ key: "Escape", code: "Escape", preventDefault: noop });
+assert.equal(game.getState().status, "paused", "Escape pauses the game");
+game.step();
+assert.deepEqual(game.getState().snake[0], headBeforePause, "the monster does not move while paused");
+listeners.keydown({ key: "Escape", code: "Escape", preventDefault: noop });
+assert.equal(game.getState().status, "playing", "second Escape resumes the game");
+
+console.log("OK: pause, keyboard codes, WASD, arrows, food, growth, wraparound, self-collision, and direction rules");

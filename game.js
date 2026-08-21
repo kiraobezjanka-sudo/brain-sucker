@@ -11,8 +11,13 @@
   const startButton = document.querySelector("#start-button");
   const rulesButton = document.querySelector("#rules-button");
   const settingsButton = document.querySelector("#settings-button");
+  const resumeButton = document.querySelector("#resume-button");
+  const pauseRulesButton = document.querySelector("#pause-rules-button");
+  const pauseSettingsButton = document.querySelector("#pause-settings-button");
+  const quitButton = document.querySelector("#quit-button");
   const menuPanels = {
     main: document.querySelector("#main-menu"),
+    pause: document.querySelector("#pause-menu"),
     rules: document.querySelector("#rules-panel"),
     settings: document.querySelector("#settings-panel"),
   };
@@ -49,11 +54,32 @@
   let status;
   let timer = null;
   let canTurn = true;
+  let activePanel = "main";
+  let backPanel = "main";
 
   function showPanel(panelName) {
+    activePanel = panelName;
     Object.entries(menuPanels).forEach(([name, panel]) => {
       panel.classList.toggle("hidden", name !== panelName);
     });
+  }
+
+  function pause() {
+    if (status !== "playing") return;
+    stopTimer();
+    status = "paused";
+    stateLabel.textContent = "ПАУЗА";
+    showPanel("pause");
+    overlay.classList.remove("hidden");
+  }
+
+  function resume() {
+    if (status !== "paused") return;
+    status = "playing";
+    stateLabel.textContent = "ОХОТА";
+    overlay.classList.add("hidden");
+    stopTimer();
+    timer = window.setInterval(step, tickRate);
   }
 
   function reset() {
@@ -405,16 +431,24 @@
     } else if (key === "r" || event.code === "KeyR") {
       reset();
       start();
-    } else if (event.key === "Escape" && status !== "playing") {
-      showPanel("main");
+    } else if (event.key === "Escape") {
+      if (status === "playing") pause();
+      else if (status === "paused") {
+        if (activePanel === "pause") resume();
+        else showPanel("pause");
+      } else showPanel("main");
     }
   });
 
   startButton.addEventListener("click", () => start());
-  rulesButton.addEventListener("click", () => showPanel("rules"));
-  settingsButton.addEventListener("click", () => showPanel("settings"));
+  resumeButton.addEventListener("click", resume);
+  quitButton.addEventListener("click", reset);
+  rulesButton.addEventListener("click", () => { backPanel = "main"; showPanel("rules"); });
+  settingsButton.addEventListener("click", () => { backPanel = "main"; showPanel("settings"); });
+  pauseRulesButton.addEventListener("click", () => { backPanel = "pause"; showPanel("rules"); });
+  pauseSettingsButton.addEventListener("click", () => { backPanel = "pause"; showPanel("settings"); });
   document.querySelectorAll("[data-back]").forEach((button) => {
-    button.addEventListener("click", () => showPanel("main"));
+    button.addEventListener("click", () => showPanel(backPanel));
   });
   document.querySelectorAll("[data-direction]").forEach((button) => {
     button.addEventListener("pointerdown", (event) => {
@@ -426,6 +460,8 @@
   window.SnakeGame = {
     reset,
     start,
+    pause,
+    resume,
     step,
     setDirection,
     getState: () => ({

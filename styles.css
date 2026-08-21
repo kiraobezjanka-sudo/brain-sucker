@@ -171,6 +171,9 @@ body::before {
 .overlay h1 { margin: 0; color: #d9dfd2; font: 900 clamp(34px, 8vw, 56px)/.76 Arial, sans-serif; letter-spacing: -3px; text-shadow: 4px 4px 0 #161d17; }
 .overlay h1 em { color: var(--blood); font-style: normal; letter-spacing: 4px; }
 .menu-home > p:not(.overlay-kicker) { margin: 19px 0 14px; color: #96a490; font-size: 10px; font-weight: 900; letter-spacing: 2px; line-height: 1.55; }
+.pause-menu h2 { margin: 0; color: #d7dfd2; font: 900 clamp(38px, 9vw, 62px)/1 Arial, sans-serif; letter-spacing: 5px; text-shadow: 4px 4px 0 #42100d; }
+.pause-menu .escape-note { margin: 14px 0 0; color: #6f7d6c; font-size: 9px; letter-spacing: 1px; }
+.pause-menu .escape-note kbd { padding: 3px 7px; border: 1px solid #596756; background: #111a12; color: #c4d0bf; }
 
 .menu-actions { width: min(220px, 74%); display: grid; gap: 7px; }
 
@@ -187,6 +190,7 @@ body::before {
 }
 
 .menu-button.primary { background: rgba(111, 18, 14, .48); color: #f1d9d1; }
+.menu-button.danger { margin-top: 3px; border-color: #5d2723; color: #9f8983; }
 .menu-button:hover { background: rgba(142, 23, 17, .45); }
 .menu-button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #020403; }
 .menu-button:focus-visible, .control:focus-visible { outline: 2px solid #d24a3e; outline-offset: 3px; }
@@ -213,22 +217,22 @@ body::before {
   pointer-events: none;
 }
 
-.dossier-header { display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px dashed #596755; color: #768372; font-size: 8px; letter-spacing: 1.5px; }
+.dossier-header { display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px dashed #596755; color: #84917f; font-size: 10px; letter-spacing: 1.5px; }
 .dossier-header strong { color: #d13c32; }
-.document-label { margin: 12px 0 2px; color: #73806e; font-size: 8px; letter-spacing: 2px; }
-.dossier h2 { margin: 0 0 11px; color: #d4dfcd; font: 900 24px Arial, sans-serif; letter-spacing: 2px; }
+.document-label { margin: 12px 0 2px; color: #82907c; font-size: 10px; letter-spacing: 2px; }
+.dossier h2 { margin: 0 0 13px; color: #d4dfcd; font: 900 29px Arial, sans-serif; letter-spacing: 2px; }
 .dossier h2::after { content: ""; display: block; width: 44px; height: 3px; margin-top: 5px; background: var(--blood); }
 .dossier ol { position: relative; z-index: 1; margin: 0; padding: 0; list-style: none; }
-.dossier li { display: grid; grid-template-columns: 30px 1fr; gap: 8px; margin-bottom: 8px; color: #9fac98; font-size: 9px; font-weight: 700; line-height: 1.35; }
-.dossier li span { color: #ca382f; font-size: 13px; }
-.dossier-note { position: relative; z-index: 1; margin: 11px 0; padding: 7px 8px; border-left: 3px solid #942a23; background: rgba(123, 29, 23, .13); color: #9ba998; font-size: 8px; line-height: 1.4; }
-.back-button { position: relative; z-index: 1; width: 130px; padding: 7px 10px; }
+.dossier li { display: grid; grid-template-columns: 34px 1fr; gap: 9px; margin-bottom: 11px; color: #aebaab; font-size: 12px; font-weight: 700; line-height: 1.45; }
+.dossier li span { color: #da463b; font-size: 15px; }
+.dossier-note { position: relative; z-index: 1; margin: 12px 0; padding: 9px 10px; border-left: 3px solid #942a23; background: rgba(123, 29, 23, .13); color: #aebaab; font-size: 11px; line-height: 1.45; }
+.back-button { position: relative; z-index: 1; width: 145px; padding: 8px 11px; font-size: 11px; }
 
 .settings-list { position: relative; z-index: 1; margin: 0; }
 .settings-list div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(113, 130, 108, .19); }
-.settings-list dt { color: #7d8b78; font-size: 8px; letter-spacing: 1px; }
-.settings-list dd { margin: 0; color: #c2cdbb; font-size: 9px; font-weight: 900; text-align: right; }
-.settings-list kbd { display: inline-block; min-width: 20px; margin-left: 2px; padding: 2px 4px; border: 1px solid #526050; background: #121a13; text-align: center; }
+.settings-list dt { color: #91a08b; font-size: 11px; letter-spacing: 1px; }
+.settings-list dd { margin: 0; color: #d0daca; font-size: 12px; font-weight: 900; text-align: right; }
+.settings-list kbd { display: inline-block; min-width: 23px; margin-left: 2px; padding: 3px 5px; border: 1px solid #526050; background: #121a13; text-align: center; }
 .settings-list .setting-on { color: #68a862; }
 
 .hint {
