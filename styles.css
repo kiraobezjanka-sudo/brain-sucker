@@ -234,6 +234,10 @@ body::before {
 .settings-list dd { margin: 0; color: #d0daca; font-size: 12px; font-weight: 900; text-align: right; }
 .settings-list kbd { display: inline-block; min-width: 23px; margin-left: 2px; padding: 3px 5px; border: 1px solid #526050; background: #121a13; text-align: center; }
 .settings-list .setting-on { color: #68a862; }
+.setting-toggle { min-width: 58px; padding: 4px 8px; border: 1px solid #4f644e; background: #111a12; color: #68a862; font: 900 11px "Courier New", monospace; cursor: pointer; }
+.setting-toggle[aria-pressed="false"] { border-color: #60403a; color: #a16c65; }
+.setting-toggle:hover { background: #1a261b; }
+.setting-toggle:focus-visible { outline: 2px solid #d24a3e; outline-offset: 2px; }
 
 .hint {
   margin: 16px 0 13px;

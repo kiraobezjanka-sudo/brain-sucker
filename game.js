@@ -15,6 +15,7 @@
   const pauseRulesButton = document.querySelector("#pause-rules-button");
   const pauseSettingsButton = document.querySelector("#pause-settings-button");
   const quitButton = document.querySelector("#quit-button");
+  const soundToggle = document.querySelector("#sound-toggle");
   const menuPanels = {
     main: document.querySelector("#main-menu"),
     pause: document.querySelector("#pause-menu"),
@@ -46,6 +47,8 @@
     right: "ArrowRight",
   };
 
+  const audio = createAudioDirector();
+
   let snake;
   let food;
   let direction;
@@ -71,6 +74,7 @@
     stateLabel.textContent = "ПАУЗА";
     showPanel("pause");
     overlay.classList.remove("hidden");
+    audio.pauseMusic();
   }
 
   function resume() {
@@ -80,10 +84,12 @@
     overlay.classList.add("hidden");
     stopTimer();
     timer = window.setInterval(step, tickRate);
+    audio.resumeMusic();
   }
 
   function reset() {
     stopTimer();
+    audio.stopAll();
     snake = [
       { x: 7, y: 8 },
       { x: 6, y: 8 },
@@ -115,6 +121,7 @@
     stateLabel.textContent = "ОХОТА";
     stopTimer();
     timer = window.setInterval(step, tickRate);
+    audio.startMusic();
   }
 
   function stopTimer() {
@@ -187,6 +194,7 @@
     showPanel("main");
     overlay.classList.remove("hidden");
     draw(true);
+    audio.playDeathStinger();
   }
 
   function updateInterface() {
@@ -443,6 +451,16 @@
   startButton.addEventListener("click", () => start());
   resumeButton.addEventListener("click", resume);
   quitButton.addEventListener("click", reset);
+  soundToggle.addEventListener("click", () => {
+    const soundEnabled = audio.toggle();
+    soundToggle.textContent = soundEnabled ? "ВКЛ" : "ВЫКЛ";
+    soundToggle.setAttribute("aria-pressed", String(soundEnabled));
+    if (soundEnabled && status === "playing") audio.startMusic();
+    if (soundEnabled && status === "paused") {
+      audio.startMusic();
+      audio.pauseMusic();
+    }
+  });
   rulesButton.addEventListener("click", () => { backPanel = "main"; showPanel("rules"); });
   settingsButton.addEventListener("click", () => { backPanel = "main"; showPanel("settings"); });
   pauseRulesButton.addEventListener("click", () => { backPanel = "pause"; showPanel("rules"); });
@@ -456,6 +474,226 @@
       setDirection(buttonKeys[button.dataset.direction]);
     });
   });
+
+  function createAudioDirector() {
+    let context = null;
+    let musicBus = null;
+    let pulseTimer = null;
+    let sustainedSources = [];
+    let stingerSources = [];
+    let enabled = true;
+    let pulseIndex = 0;
+
+    function getContext() {
+      if (context) return context;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      context = new AudioContextClass();
+      return context;
+    }
+
+    function wakeContext() {
+      const activeContext = getContext();
+      if (!activeContext) return null;
+      if (activeContext.state === "suspended") activeContext.resume();
+      return activeContext;
+    }
+
+    function stopSources(sources) {
+      sources.forEach((source) => {
+        try { source.stop(); } catch (_) { /* Source already stopped. */ }
+        try { source.disconnect(); } catch (_) { /* Source already disconnected. */ }
+      });
+    }
+
+    function stopMusic(immediate = false) {
+      if (pulseTimer !== null) {
+        window.clearInterval(pulseTimer);
+        pulseTimer = null;
+      }
+      if (!context) {
+        sustainedSources = [];
+        musicBus = null;
+        return;
+      }
+
+      const sourcesToStop = sustainedSources;
+      sustainedSources = [];
+      const busToDisconnect = musicBus;
+      musicBus = null;
+      const now = context.currentTime;
+
+      if (busToDisconnect) {
+        busToDisconnect.gain.cancelScheduledValues(now);
+        busToDisconnect.gain.setTargetAtTime(0.0001, now, immediate ? 0.01 : 0.12);
+      }
+
+      window.setTimeout(() => {
+        stopSources(sourcesToStop);
+        try { busToDisconnect?.disconnect(); } catch (_) { /* Bus already disconnected. */ }
+      }, immediate ? 30 : 550);
+    }
+
+    function createDrone(activeContext, output, frequency, type, volume, detune = 0) {
+      const oscillator = activeContext.createOscillator();
+      const gain = activeContext.createGain();
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      oscillator.detune.value = detune;
+      gain.gain.value = volume;
+      oscillator.connect(gain).connect(output);
+      oscillator.start();
+      sustainedSources.push(oscillator);
+    }
+
+    function createNoise(activeContext, output) {
+      const duration = 2;
+      const buffer = activeContext.createBuffer(1, activeContext.sampleRate * duration, activeContext.sampleRate);
+      const channel = buffer.getChannelData(0);
+      for (let index = 0; index < channel.length; index += 1) {
+        channel[index] = (Math.random() * 2 - 1) * 0.38;
+      }
+
+      const source = activeContext.createBufferSource();
+      const filter = activeContext.createBiquadFilter();
+      const gain = activeContext.createGain();
+      source.buffer = buffer;
+      source.loop = true;
+      filter.type = "bandpass";
+      filter.frequency.value = 190;
+      filter.Q.value = 0.7;
+      gain.gain.value = 0.045;
+      source.connect(filter).connect(gain).connect(output);
+      source.start();
+      sustainedSources.push(source);
+    }
+
+    function schedulePulse() {
+      if (!context || !musicBus || !enabled) return;
+      const progressions = [
+        [92.5, 138.59],
+        [87.31, 130.81],
+        [77.78, 116.54],
+        [82.41, 123.47],
+      ];
+      const chord = progressions[pulseIndex % progressions.length];
+      pulseIndex += 1;
+      const startTime = context.currentTime + 0.04;
+
+      chord.forEach((frequency, noteIndex) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = noteIndex === 0 ? "triangle" : "sine";
+        oscillator.frequency.value = frequency;
+        oscillator.detune.value = noteIndex === 0 ? -5 : 7;
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.exponentialRampToValueAtTime(noteIndex === 0 ? 0.035 : 0.018, startTime + 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.1);
+        oscillator.connect(gain).connect(musicBus);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 2.2);
+      });
+    }
+
+    function startMusic() {
+      if (!enabled) return;
+      const activeContext = wakeContext();
+      if (!activeContext) return;
+      stopMusic(true);
+
+      musicBus = activeContext.createGain();
+      const lowPass = activeContext.createBiquadFilter();
+      lowPass.type = "lowpass";
+      lowPass.frequency.value = 520;
+      lowPass.Q.value = 1.4;
+      musicBus.gain.setValueAtTime(0.0001, activeContext.currentTime);
+      musicBus.gain.exponentialRampToValueAtTime(0.12, activeContext.currentTime + 1.5);
+      lowPass.connect(musicBus).connect(activeContext.destination);
+
+      createDrone(activeContext, lowPass, 43.65, "sine", 0.25, -4);
+      createDrone(activeContext, lowPass, 65.41, "triangle", 0.055, 5);
+      createDrone(activeContext, lowPass, 46.25, "sine", 0.08, 2);
+      createNoise(activeContext, lowPass);
+      schedulePulse();
+      pulseTimer = window.setInterval(schedulePulse, 3200);
+    }
+
+    function pauseMusic() {
+      if (!context || !musicBus) return;
+      const now = context.currentTime;
+      musicBus.gain.cancelScheduledValues(now);
+      musicBus.gain.setTargetAtTime(0.025, now, 0.18);
+    }
+
+    function resumeMusic() {
+      if (!enabled) return;
+      if (!musicBus) {
+        startMusic();
+        return;
+      }
+      wakeContext();
+      const now = context.currentTime;
+      musicBus.gain.cancelScheduledValues(now);
+      musicBus.gain.setTargetAtTime(0.12, now, 0.22);
+    }
+
+    function playDeathStinger() {
+      stopMusic(false);
+      if (!enabled) return;
+      const activeContext = wakeContext();
+      if (!activeContext) return;
+      stopSources(stingerSources);
+      stingerSources = [];
+
+      const master = activeContext.createGain();
+      master.gain.value = 0.16;
+      master.connect(activeContext.destination);
+      const startTime = activeContext.currentTime + 0.05;
+      const notes = [196, 174.61, 146.83, 98];
+
+      notes.forEach((frequency, index) => {
+        const oscillator = activeContext.createOscillator();
+        const gain = activeContext.createGain();
+        const noteStart = startTime + index * 0.28;
+        oscillator.type = index < 2 ? "sawtooth" : "triangle";
+        oscillator.frequency.setValueAtTime(frequency, noteStart);
+        oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.72, noteStart + 0.7);
+        gain.gain.setValueAtTime(0.0001, noteStart);
+        gain.gain.exponentialRampToValueAtTime(0.16 / (index + 1), noteStart + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.85);
+        oscillator.connect(gain).connect(master);
+        oscillator.start(noteStart);
+        oscillator.stop(noteStart + 0.9);
+        stingerSources.push(oscillator);
+      });
+
+      const impact = activeContext.createOscillator();
+      const impactGain = activeContext.createGain();
+      impact.type = "sine";
+      impact.frequency.setValueAtTime(82, startTime);
+      impact.frequency.exponentialRampToValueAtTime(28, startTime + 1.6);
+      impactGain.gain.setValueAtTime(0.28, startTime);
+      impactGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.7);
+      impact.connect(impactGain).connect(master);
+      impact.start(startTime);
+      impact.stop(startTime + 1.8);
+      stingerSources.push(impact);
+    }
+
+    function stopAll() {
+      stopMusic(true);
+      stopSources(stingerSources);
+      stingerSources = [];
+    }
+
+    function toggle() {
+      enabled = !enabled;
+      if (!enabled) stopAll();
+      return enabled;
+    }
+
+    return { startMusic, pauseMusic, resumeMusic, playDeathStinger, stopAll, toggle };
+  }
 
   window.SnakeGame = {
     reset,
