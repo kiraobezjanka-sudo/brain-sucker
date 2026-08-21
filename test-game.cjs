@@ -4,6 +4,51 @@ const noop = () => {};
 const context = new Proxy({}, { get: () => noop, set: () => true });
 const elements = new Map();
 const listeners = {};
+let oscillatorCount = 0;
+
+const audioParam = () => ({
+  value: 0,
+  cancelScheduledValues: noop,
+  setValueAtTime: noop,
+  setTargetAtTime: noop,
+  exponentialRampToValueAtTime: noop,
+});
+
+const audioNode = () => ({
+  connect(destination) { return destination; },
+  disconnect: noop,
+});
+
+class FakeAudioContext {
+  constructor() {
+    this.currentTime = 0;
+    this.destination = audioNode();
+    this.sampleRate = 8000;
+    this.state = "running";
+  }
+
+  resume() { return Promise.resolve(); }
+  createOscillator() {
+    oscillatorCount += 1;
+    return { ...audioNode(), frequency: audioParam(), detune: audioParam(), start: noop, stop: noop };
+  }
+  createGain() { return { ...audioNode(), gain: audioParam() }; }
+  createBiquadFilter() { return { ...audioNode(), frequency: audioParam(), Q: audioParam() }; }
+  createDynamicsCompressor() {
+    return {
+      ...audioNode(),
+      threshold: audioParam(),
+      knee: audioParam(),
+      ratio: audioParam(),
+      attack: audioParam(),
+      release: audioParam(),
+    };
+  }
+  createBuffer(_channels, length) {
+    return { getChannelData: () => new Float32Array(length) };
+  }
+  createBufferSource() { return { ...audioNode(), start: noop, stop: noop, loop: false, buffer: null }; }
+}
 
 function element(id) {
   if (!elements.has(id)) {
@@ -28,8 +73,10 @@ global.document = {
 };
 
 global.window = {
+  AudioContext: FakeAudioContext,
   setInterval: () => 1,
   clearInterval: noop,
+  setTimeout: (callback) => { callback(); return 1; },
 };
 
 require("./game.js");
@@ -41,9 +88,11 @@ assert.equal(game.getState().score, 0);
 
 game.setFoodForTest({ x: 8, y: 8 });
 game.start();
+const oscillatorsBeforePickup = oscillatorCount;
 game.step();
 assert.equal(game.getState().score, 10, "food adds 10 points");
 assert.equal(game.getState().snake.length, 4, "food grows the snake");
+assert.equal(oscillatorCount, oscillatorsBeforePickup + 2, "food plays a two-layer pickup sound");
 
 game.reset();
 game.setSnakeForTest([{ x: 15, y: 8 }, { x: 14, y: 8 }, { x: 13, y: 8 }], { x: 1, y: 0 });
@@ -107,4 +156,4 @@ assert.deepEqual(game.getState().snake[0], headBeforePause, "the monster does no
 listeners.keydown({ key: "Escape", code: "Escape", preventDefault: noop });
 assert.equal(game.getState().status, "playing", "second Escape resumes the game");
 
-console.log("OK: pause, keyboard codes, WASD, arrows, food, growth, wraparound, self-collision, and direction rules");
+console.log("OK: audio pickup, pause, keyboard codes, WASD, arrows, food, growth, wraparound, self-collision, and direction rules");

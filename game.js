@@ -166,6 +166,7 @@
     snake.unshift(head);
     if (willEat) {
       score += 10;
+      audio.playPickupSound();
       placeFood();
       updateInterface();
     } else {
@@ -479,6 +480,7 @@
     let context = null;
     let musicBus = null;
     let pulseTimer = null;
+    let heartbeatTimer = null;
     let sustainedSources = [];
     let stingerSources = [];
     let enabled = true;
@@ -510,6 +512,10 @@
       if (pulseTimer !== null) {
         window.clearInterval(pulseTimer);
         pulseTimer = null;
+      }
+      if (heartbeatTimer !== null) {
+        window.clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
       }
       if (!context) {
         sustainedSources = [];
@@ -562,7 +568,7 @@
       filter.type = "bandpass";
       filter.frequency.value = 190;
       filter.Q.value = 0.7;
-      gain.gain.value = 0.045;
+      gain.gain.value = 0.08;
       source.connect(filter).connect(gain).connect(output);
       source.start();
       sustainedSources.push(source);
@@ -587,11 +593,31 @@
         oscillator.frequency.value = frequency;
         oscillator.detune.value = noteIndex === 0 ? -5 : 7;
         gain.gain.setValueAtTime(0.0001, startTime);
-        gain.gain.exponentialRampToValueAtTime(noteIndex === 0 ? 0.035 : 0.018, startTime + 0.18);
+        gain.gain.exponentialRampToValueAtTime(noteIndex === 0 ? 0.075 : 0.04, startTime + 0.12);
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.1);
         oscillator.connect(gain).connect(musicBus);
         oscillator.start(startTime);
         oscillator.stop(startTime + 2.2);
+      });
+    }
+
+    function scheduleHeartbeat() {
+      if (!context || !musicBus || !enabled) return;
+      const startTime = context.currentTime + 0.03;
+
+      [0, 0.23].forEach((delay, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const beatStart = startTime + delay;
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(index === 0 ? 74 : 66, beatStart);
+        oscillator.frequency.exponentialRampToValueAtTime(38, beatStart + 0.22);
+        gain.gain.setValueAtTime(0.0001, beatStart);
+        gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.22 : 0.15, beatStart + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.0001, beatStart + 0.27);
+        oscillator.connect(gain).connect(musicBus);
+        oscillator.start(beatStart);
+        oscillator.stop(beatStart + 0.3);
       });
     }
 
@@ -603,26 +629,35 @@
 
       musicBus = activeContext.createGain();
       const lowPass = activeContext.createBiquadFilter();
+      const compressor = activeContext.createDynamicsCompressor();
       lowPass.type = "lowpass";
-      lowPass.frequency.value = 520;
-      lowPass.Q.value = 1.4;
+      lowPass.frequency.value = 760;
+      lowPass.Q.value = 1.1;
+      compressor.threshold.value = -22;
+      compressor.knee.value = 18;
+      compressor.ratio.value = 5;
+      compressor.attack.value = 0.01;
+      compressor.release.value = 0.28;
       musicBus.gain.setValueAtTime(0.0001, activeContext.currentTime);
-      musicBus.gain.exponentialRampToValueAtTime(0.12, activeContext.currentTime + 1.5);
-      lowPass.connect(musicBus).connect(activeContext.destination);
+      musicBus.gain.exponentialRampToValueAtTime(0.34, activeContext.currentTime + 0.8);
+      lowPass.connect(musicBus);
+      musicBus.connect(compressor).connect(activeContext.destination);
 
-      createDrone(activeContext, lowPass, 43.65, "sine", 0.25, -4);
-      createDrone(activeContext, lowPass, 65.41, "triangle", 0.055, 5);
-      createDrone(activeContext, lowPass, 46.25, "sine", 0.08, 2);
+      createDrone(activeContext, lowPass, 43.65, "triangle", 0.34, -7);
+      createDrone(activeContext, lowPass, 65.41, "sawtooth", 0.09, 8);
+      createDrone(activeContext, lowPass, 46.25, "sine", 0.13, 3);
       createNoise(activeContext, lowPass);
       schedulePulse();
-      pulseTimer = window.setInterval(schedulePulse, 3200);
+      scheduleHeartbeat();
+      pulseTimer = window.setInterval(schedulePulse, 2400);
+      heartbeatTimer = window.setInterval(scheduleHeartbeat, 1450);
     }
 
     function pauseMusic() {
       if (!context || !musicBus) return;
       const now = context.currentTime;
       musicBus.gain.cancelScheduledValues(now);
-      musicBus.gain.setTargetAtTime(0.025, now, 0.18);
+      musicBus.gain.setTargetAtTime(0.055, now, 0.18);
     }
 
     function resumeMusic() {
@@ -634,7 +669,45 @@
       wakeContext();
       const now = context.currentTime;
       musicBus.gain.cancelScheduledValues(now);
-      musicBus.gain.setTargetAtTime(0.12, now, 0.22);
+      musicBus.gain.setTargetAtTime(0.34, now, 0.22);
+    }
+
+    function playPickupSound() {
+      if (!enabled) return;
+      const activeContext = wakeContext();
+      if (!activeContext) return;
+      const startTime = activeContext.currentTime + 0.015;
+      const master = activeContext.createGain();
+      const filter = activeContext.createBiquadFilter();
+      master.gain.value = 0.42;
+      filter.type = "bandpass";
+      filter.frequency.value = 920;
+      filter.Q.value = 1.6;
+      master.connect(activeContext.destination);
+
+      const chirp = activeContext.createOscillator();
+      const chirpGain = activeContext.createGain();
+      chirp.type = "sawtooth";
+      chirp.frequency.setValueAtTime(240, startTime);
+      chirp.frequency.exponentialRampToValueAtTime(880, startTime + 0.13);
+      chirp.frequency.exponentialRampToValueAtTime(310, startTime + 0.34);
+      chirpGain.gain.setValueAtTime(0.0001, startTime);
+      chirpGain.gain.exponentialRampToValueAtTime(0.22, startTime + 0.025);
+      chirpGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.38);
+      chirp.connect(filter).connect(chirpGain).connect(master);
+      chirp.start(startTime);
+      chirp.stop(startTime + 0.4);
+
+      const gulp = activeContext.createOscillator();
+      const gulpGain = activeContext.createGain();
+      gulp.type = "sine";
+      gulp.frequency.setValueAtTime(150, startTime);
+      gulp.frequency.exponentialRampToValueAtTime(58, startTime + 0.28);
+      gulpGain.gain.setValueAtTime(0.18, startTime);
+      gulpGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.3);
+      gulp.connect(gulpGain).connect(master);
+      gulp.start(startTime);
+      gulp.stop(startTime + 0.32);
     }
 
     function playDeathStinger() {
@@ -692,7 +765,7 @@
       return enabled;
     }
 
-    return { startMusic, pauseMusic, resumeMusic, playDeathStinger, stopAll, toggle };
+    return { startMusic, pauseMusic, resumeMusic, playPickupSound, playDeathStinger, stopAll, toggle };
   }
 
   window.SnakeGame = {
