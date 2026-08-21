@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090b09" />
+    <meta name="description" content="Brain Sucker — пиксельная survival-horror игра на основе классической Змейки." />
+    <title>Brain Sucker: Outbreak</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="phone" aria-labelledby="game-title">
+      <div class="case-header" aria-hidden="true">
+        <span class="case-id">RC-1998 / LAB 03</span>
+        <span class="warning-light"></span>
+        <span class="case-status">BIOHAZARD</span>
+      </div>
+
+      <section class="screen-shell">
+        <div class="screen-brand" aria-hidden="true">
+          <span>RACCOON CITY INCIDENT ARCHIVE</span>
+          <strong>∴</strong>
+        </div>
+
+        <div class="screen">
+          <header class="hud">
+            <div>
+              <span class="hud-label">BRAIN SUCKER</span>
+              <span id="state-label" class="state-label">ГОТОВ?</span>
+            </div>
+            <div class="score-box">
+              <span>СЧЁТ</span>
+              <strong id="score">000</strong>
+            </div>
+          </header>
+
+          <canvas id="game" width="384" height="384" aria-label="Игровое поле Brain Sucker"></canvas>
+
+          <div id="overlay" class="overlay">
+            <section id="main-menu" class="menu-panel menu-home" aria-label="Главное меню">
+              <p id="overlay-kicker" class="overlay-kicker">ОБЪЕКТ: НЕ СОДЕРЖИТСЯ</p>
+              <h1 id="game-title">BRAIN<br /><em>SUCKER</em></h1>
+              <p id="overlay-message">ИНЦИДЕНТ В СЕКТОРЕ B-3</p>
+              <div class="menu-actions">
+                <button id="start-button" class="menu-button primary" type="button">ЗАПУСК</button>
+                <button id="rules-button" class="menu-button" type="button">ПРАВИЛА</button>
+                <button id="settings-button" class="menu-button" type="button">НАСТРОЙКИ</button>
+              </div>
+            </section>
+
+            <section id="rules-panel" class="menu-panel dossier hidden" aria-label="Правила игры">
+              <header class="dossier-header">
+                <span>ФАЙЛ № BS-03</span>
+                <strong>СЕКРЕТНО</strong>
+              </header>
+              <p class="document-label">ПРОТОКОЛ СДЕРЖИВАНИЯ</p>
+              <h2>ПРАВИЛА</h2>
+              <ol>
+                <li><span>01</span> Поглощай биологические образцы — каждый даёт 10 очков.</li>
+                <li><span>02</span> После поглощения организм становится длиннее.</li>
+                <li><span>03</span> Границы сектора сквозные: выход ведёт на противоположную сторону.</li>
+                <li><span>04</span> Не касайся собственного тела — мутация станет критической.</li>
+              </ol>
+              <p class="dossier-note">ЦЕЛЬ: набрать максимальный индекс заражения.</p>
+              <button class="menu-button back-button" type="button" data-back>← НАЗАД</button>
+            </section>
+
+            <section id="settings-panel" class="menu-panel dossier settings-panel hidden" aria-label="Настройки управления">
+              <header class="dossier-header">
+                <span>ТЕРМИНАЛ УПРАВЛЕНИЯ</span>
+                <strong>ONLINE</strong>
+              </header>
+              <p class="document-label">КОНФИГУРАЦИЯ ОБЪЕКТА</p>
+              <h2>НАСТРОЙКИ</h2>
+              <dl class="settings-list">
+                <div><dt>КЛАВИАТУРА</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> или стрелки</dd></div>
+                <div><dt>ПЕРЕЗАПУСК</dt><dd><kbd>R</kbd></dd></div>
+                <div><dt>СКВОЗНЫЕ ГРАНИЦЫ</dt><dd class="setting-on">ВКЛ</dd></div>
+                <div><dt>ТЕМП МУТАЦИИ</dt><dd>СТАНДАРТНЫЙ</dd></div>
+              </dl>
+              <p class="dossier-note">WASD работает при любой раскладке клавиатуры.</p>
+              <button class="menu-button back-button" type="button" data-back>← НАЗАД</button>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <div class="controls" aria-label="Экранное управление">
+        <button class="control up" type="button" data-direction="up" aria-label="Вверх">W<small>▲</small></button>
+        <button class="control left" type="button" data-direction="left" aria-label="Влево">A<small>◀</small></button>
+        <div class="control-center" aria-hidden="true"></div>
+        <button class="control right" type="button" data-direction="right" aria-label="Вправо">D<small>▶</small></button>
+        <button class="control down" type="button" data-direction="down" aria-label="Вниз">S<small>▼</small></button>
+      </div>
+
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
