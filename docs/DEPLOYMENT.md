@@ -74,8 +74,6 @@ Workflow `.github/workflows/pages-main.yml` запускается при отп
 
 Workflow `.github/workflows/pr-preview.yml` запускается при открытии, повторном открытии, обновлении и закрытии Pull Request.
 
-После обновления каталога PR в ветке `gh-pages` workflow отдельно запрашивает сборку GitHub Pages. Это необходимо, потому что изменения, отправленные стандартным токеном GitHub Actions, сами по себе не запускают публикацию Pages.
-
 Для каждого PR создаётся адрес:
 
 ```text
@@ -94,7 +92,5 @@ https://kiraobezjanka-sudo.github.io/brain-sucker/pr-preview/pr-<номер>/
 - `Settings → Pages → Build and deployment → Deploy from a branch`;
 - ветка `gh-pages`;
 - каталог `/ (root)`.
-
-Workflow получает только необходимые разрешения, включая `pages: write` для запроса сборки опубликованного сайта.
 
 Секретные токены в файлах проекта не используются.
