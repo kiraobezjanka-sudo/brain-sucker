@@ -52,3 +52,45 @@ dist/server/index.js
 - Токены нельзя записывать в Git-конфигурацию, URL удалённого репозитория или файлы проекта.
 - Публичный доступ не следует менять без прямой просьбы пользователя.
 - Не публиковать версию, если тесты или сборка завершились с ошибкой.
+
+## GitHub Pages и проверка Pull Request
+
+GitHub Pages используется как дополнительная среда публикации и не заменяет основной сайт OpenAI Sites.
+
+Основной адрес GitHub Pages:
+
+<https://kiraobezjanka-sudo.github.io/brain-sucker/>
+
+### Автоматическая публикация основной версии
+
+Workflow `.github/workflows/pages-main.yml` запускается при отправке изменений в ветку `main`:
+
+1. запускает автоматические тесты;
+2. выполняет `npm run build`;
+3. публикует содержимое `dist/client` в ветку `gh-pages`;
+4. сохраняет каталог `pr-preview`, чтобы не удалить активные проверки Pull Request.
+
+### Проверочные сайты Pull Request
+
+Workflow `.github/workflows/pr-preview.yml` запускается при открытии, повторном открытии, обновлении и закрытии Pull Request.
+
+Для каждого PR создаётся адрес:
+
+```text
+https://kiraobezjanka-sudo.github.io/brain-sucker/pr-preview/pr-<номер>/
+```
+
+При новых коммитах сайт обновляется. После закрытия PR соответствующий каталог удаляется.
+
+Проверочные публикации предназначены для Pull Request из веток этого же репозитория. Внешние форки не поддерживаются используемым workflow по умолчанию.
+
+### Настройки репозитория
+
+Для работы автоматизации необходимы:
+
+- `Settings → Actions → General → Workflow permissions → Read and write permissions`;
+- `Settings → Pages → Build and deployment → Deploy from a branch`;
+- ветка `gh-pages`;
+- каталог `/ (root)`.
+
+Секретные токены в файлах проекта не используются.
